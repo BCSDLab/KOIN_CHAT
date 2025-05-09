@@ -63,6 +63,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           port: ${{ secrets.EC2_SSH_PORT }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          envs: SERVER_PORT
           script: |
             set -e
 
@@ -74,34 +75,34 @@ jobs:
             echo "배포 디렉토리로 이동합니다: ${DEPLOY_PATH}"
             cd ${DEPLOY_PATH}
 
-            echo "${APP_NAME} 프로세스가 실행중인지 확인합니다"
-            PID=$(pgrep -f ${JAR_NAME} || true)
+            echo "$SERVER_PORT 포트를 사용하는 프로세스가 실행 중인지 확인합니다"
+            PID=$(lsof -ti :${SERVER_PORT} || true)
 
             if [ -n "$PID" ]; then
-              echo "${APP_NAME} 프로세스(PID: $PID)를 종료합니다 ..."
+              echo "${APP_NAME} 포트를 사용하는 프로세스(PID: $PID)를 종료합니다 ..."
               sudo kill -15 $PID
               for i in {1..30}; do
-                if ! pgrep -f ${JAR_NAME} > /dev/null; then
-                  echo "${APP_NAME} 프로세스 종료"
+                if ! lsof -ti :${SERVER_PORT} > /dev/null; then
+                  echo "${APP_NAME} 포트 프로세스 종료 완료"
                   break
                 fi
                 sleep 1
               done
-              if pgrep -f ${JAR_NAME} > /dev/null; then
-                echo "프로세스가 성공적으로 종료하지 않았습니다. kill..."
+              if lsof -ti :${SERVER_PORT} > /dev/null; then
+                echo "프로세스가 정상적으로 종료되지 않았습니다. 강제 종료 시도..."
                 sudo kill -9 $PID
               fi
             else
-              echo "실행 중인 ${APP_NAME} 프로세스를 찾을 수 없습니다"
+              echo "${SERVER_PORT} 포트를 사용하는 프로세스를 찾을 수 없습니다"
             fi
 
             echo "${APP_NAME} 실행..."
             nohup java -jar ${JAR_NAME} > ${LOG_FILE} 2>&1 &
 
-            echo "${APP_NAME} 배포가 완료 되었습니다."
+            echo "${APP_NAME} 배포가 완료되었습니다."
             sleep 10
-            if pgrep -f ${JAR_NAME} > /dev/null; then
-              echo "${APP_NAME}가 실행 중 입니다"
+            if lsof -ti :${SERVER_PORT} > /dev/null; then
+              echo "${APP_NAME}가 정상적으로 실행 중입니다 (포트 ${SERVER_PORT})"
             else
               echo "ERROR: ${APP_NAME} 실행 실패. 로그를 확인해주세요."
               exit 1
