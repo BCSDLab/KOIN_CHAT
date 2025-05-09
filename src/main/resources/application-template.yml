@@ -1,3 +1,8 @@
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  access-token:
+    expiration-time: 600000
+
 spring:
   web:
     resources:
