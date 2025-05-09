@@ -1,0 +1,44 @@
+spring:
+  web:
+    resources:
+      add-mappings: false
+  lifecycle:
+    timeout-per-shutdown-phase: 5s
+  servlet:
+    multipart:
+      max-request-size: 10MB
+      max-file-size: 10MB
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+
+    hibernate:
+      ddl-auto: validate
+  data:
+    redis:
+      port: ${{secrets.REDIS_PORT}}
+      host: ${{secrets.REDIS_HOST}}
+      password: ${{secrets.REDIS_PASSWORD}}
+    mongodb:
+      uri: ${{secrets.MONGO_URI}}
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${{secrets.MYSQL_URL}}
+    username: ${{secrets.MYSQL_USERNAME}}
+    password: ${{secrets.MYSQL_PASSWORD}}
+
+  profiles:
+    active: dev
+
+server:
+  tomcat:
+    max-http-form-post-size: 10MB
+  lifecycle:
+    timeout-per-shutdown-phase: 5s
+
+cors:
+  allowedOrigins: ${{secrets.CORS_ALLOWED_ORIGINS}}
+
