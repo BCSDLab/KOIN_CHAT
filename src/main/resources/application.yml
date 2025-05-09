@@ -38,6 +38,7 @@ server:
     max-http-form-post-size: 10MB
   lifecycle:
     timeout-per-shutdown-phase: 5s
+  port: ${{secrets.SERVER_PORT}}
 
 cors:
   allowedOrigins: ${{secrets.CORS_ALLOWED_ORIGINS}}
