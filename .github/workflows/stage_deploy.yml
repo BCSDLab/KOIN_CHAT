@@ -100,10 +100,16 @@ jobs:
             nohup java -jar ${JAR_NAME} > ${LOG_FILE} 2>&1 &
 
             echo "${APP_NAME} 배포가 완료되었습니다."
-            sleep 10
-            if lsof -ti :${SERVER_PORT} > /dev/null; then
-              echo "${APP_NAME}가 정상적으로 실행 중입니다 (포트 ${SERVER_PORT})"
-            else
+            echo "서버 기동 상태를 확인합니다 (최대 30초 대기)..."
+            for i in {1..30}; do
+              if lsof -ti :${SERVER_PORT} > /dev/null; then
+                echo "${APP_NAME}가 정상적으로 실행 중입니다 (포트 ${SERVER_PORT})"
+                break
+              fi
+              sleep 1
+            done
+
+            if ! lsof -ti :${SERVER_PORT} > /dev/null; then
               echo "ERROR: ${APP_NAME} 실행 실패. 로그를 확인해주세요."
               exit 1
             fi
