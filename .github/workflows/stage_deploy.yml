@@ -1,0 +1,108 @@
+name: KOIN_CHAT stage server deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MYSQL_URL: ${{ secrets.MYSQL_URL }}
+      MYSQL_USERNAME: ${{ secrets.MYSQL_USERNAME }}
+      MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
+      CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Install envsubst
+        run: sudo apt-get update && sudo apt-get install -y gettext
+
+      - name: Generate application.yml from template
+        run: |
+          envsubst < src/main/resources/application-template.yml > src/main/resources/application.yml
+
+      - name: Build with Gradle
+        run: ./gradlew bootJar
+
+      - name: Rename JAR file for easier management
+        run: mv build/libs/*-SNAPSHOT.jar build/libs/KOIN_CHAT.jar
+
+      - name: Transfer JAR to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.EC2_SSH_PORT }}
+          source: "build/libs/KOIN_CHAT.jar"
+          target: "/usr/local/koin/socket-api"
+          strip_components: 2
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          port: ${{ secrets.EC2_SSH_PORT }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            APP_NAME="KOIN_CHAT"
+            JAR_NAME="KOIN_CHAT.jar"
+            DEPLOY_PATH="/usr/local/koin/socket-api"
+            LOG_FILE="${DEPLOY_PATH}/${APP_NAME}.log"
+
+            echo "배포 디렉토리로 이동합니다: ${DEPLOY_PATH}"
+            cd ${DEPLOY_PATH}
+
+            echo "${APP_NAME} 프로세스가 실행중인지 확인합니다"
+            PID=$(pgrep -f ${JAR_NAME} || true)
+
+            if [ -n "$PID" ]; then
+              echo "${APP_NAME} 프로세스(PID: $PID)를 종료합니다 ..."
+              sudo kill -15 $PID
+              for i in {1..30}; do
+                if ! pgrep -f ${JAR_NAME} > /dev/null; then
+                  echo "${APP_NAME} 프로세스 종료"
+                  break
+                fi
+                sleep 1
+              done
+              if pgrep -f ${JAR_NAME} > /dev/null; then
+                echo "프로세스가 성공적으로 종료하지 않았습니다. kill..."
+                sudo kill -9 $PID
+              fi
+            else
+              echo "실행 중인 ${APP_NAME} 프로세스를 찾을 수 없습니다"
+            fi
+
+            echo "${APP_NAME} 실행..."
+            nohup java -jar ${JAR_NAME} > ${LOG_FILE} 2>&1 &
+
+            echo "${APP_NAME} 배포가 완료 되었습니다."
+            sleep 10
+            if pgrep -f ${JAR_NAME} > /dev/null; then
+              echo "${APP_NAME}가 실행 중 입니다"
+            else
+              echo "ERROR: ${APP_NAME} 실행 실패. 로그를 확인해주세요."
+              exit 1
+            fi
