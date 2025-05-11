@@ -30,6 +30,27 @@ public class JwtProvider {
         this.expirationTime = expirationTime;
     }
 
+    public Integer getUserId(String token) {
+        try {
+            String userId = Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("id")
+                .toString();
+            return Integer.parseInt(userId);
+        } catch (JwtException e) {
+            throw new AuthenticationException(AuthenticationErrorCode.INVALID_JWT_TOKEN);
+        }
+    }
+
+    private SecretKey getSecretKey() {
+        String encoded = Base64.getEncoder().encodeToString(secretKey.getBytes());
+        return Keys.hmacShaKeyFor(encoded.getBytes());
+    }
+
+
     // public String createToken(User user) {
     //     if (user == null) {
     //         throw UserNotFoundException.withDetail("user: " + null);
@@ -61,24 +82,4 @@ public class JwtProvider {
     //         .expiration(Date.from(Instant.now().plusMillis(expirationTime)))
     //         .compact();
     // }
-
-    public Integer getUserId(String token) {
-        try {
-            String userId = Jwts.parser()
-                .verifyWith(getSecretKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("id")
-                .toString();
-            return Integer.parseInt(userId);
-        } catch (JwtException e) {
-            throw new AuthenticationException(AuthenticationErrorCode.INVALID_JWT_TOKEN);
-        }
-    }
-
-    private SecretKey getSecretKey() {
-        String encoded = Base64.getEncoder().encodeToString(secretKey.getBytes());
-        return Keys.hmacShaKeyFor(encoded.getBytes());
-    }
 }

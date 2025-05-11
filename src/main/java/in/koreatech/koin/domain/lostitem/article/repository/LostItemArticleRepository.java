@@ -1,0 +1,25 @@
+package in.koreatech.koin.domain.lostitem.article.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
+
+import in.koreatech.koin.domain.lostitem.article.exception.ArticleErrorCode;
+import in.koreatech.koin.domain.lostitem.article.exception.ArticleException;
+import in.koreatech.koin.domain.lostitem.article.model.KoinArticle;
+import in.koreatech.koin.domain.lostitem.article.model.LostItemArticle;
+
+public interface LostItemArticleRepository extends Repository<LostItemArticle, Integer> {
+
+    KoinArticle save(LostItemArticle article);
+
+    @Query(value = "SELECT * FROM lost_item_articles WHERE article_id = :articleId AND is_deleted = false", nativeQuery = true)
+    Optional<LostItemArticle> findByArticleId(@Param("articleId") Integer articleId);
+
+    default LostItemArticle getByArticleId(Integer articleId) {
+        return findByArticleId(articleId).orElseThrow(
+            () -> new ArticleException(ArticleErrorCode.ARTICLE_NOT_FOUND));
+    }
+}

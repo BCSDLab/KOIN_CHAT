@@ -19,6 +19,7 @@ jobs:
       SERVER_PORT: ${{ secrets.SERVER_PORT }}
       CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
       JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY_STAGE }}
+      SWAGGER_SERVER_URL: ${{ secrets.SWAGGER_SERVER_URL }}
 
     steps:
       - name: Checkout source code

@@ -13,6 +13,9 @@ public enum AuthenticationErrorCode implements BaseErrorCode {
     MISSING_JWT_TOKEN(HttpStatusCode.UNAUTHORIZED, ReasonCode.MISSING_OR_INVALID_AUTHENTICATION_CREDENTIALS,
         "토큰 정보가 유효하지 않습니다."),
 
+    USER_ID_NULL(HttpStatusCode.UNAUTHORIZED, ReasonCode.MISSING_OR_INVALID_AUTHENTICATION_CREDENTIALS,
+        "userId is null"),
+
     /* 401 FORBIDDEN */
     INVALID_JWT_TOKEN(HttpStatusCode.FORBIDDEN, ReasonCode.MISSING_OR_INVALID_AUTHENTICATION_CREDENTIALS,
         "Authorization 헤더가 없거나 Bearer 토큰이 아닙니다.");

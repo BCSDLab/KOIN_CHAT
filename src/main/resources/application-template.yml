@@ -40,5 +40,9 @@ server:
   lifecycle:
     timeout-per-shutdown-phase: 5s
   port: ${SERVER_PORT}
+
+swagger:
+  server-url: ${SWAGGER_SERVER_URL}
+
 cors:
   allowedOrigins: "${CORS_ALLOWED_ORIGINS}"

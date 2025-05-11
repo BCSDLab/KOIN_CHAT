@@ -2,6 +2,7 @@ package in.koreatech.koin.domain.lostitem.notification.service;
 
 import org.springframework.stereotype.Component;
 
+import in.koreatech.koin.domain.notification.model.NotificationSubscribeType;
 import in.koreatech.koin.domain.notification.repository.NotificationSubscribeRepository;
 import lombok.RequiredArgsConstructor;
 
