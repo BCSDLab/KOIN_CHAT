@@ -20,6 +20,7 @@ jobs:
       CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
       JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY_STAGE }}
       SWAGGER_SERVER_URL: ${{ secrets.SWAGGER_SERVER_URL }}
+      SLACK_WEBHOOK_URL : ${{ secrets.SLACK_WEBHOOK_URL }}
 
     steps:
       - name: Checkout source code
@@ -115,3 +116,13 @@ jobs:
               echo "ERROR: ${APP_NAME} 실행 실패. 로그를 확인해주세요."
               exit 1
             fi
+
+      - name: Upload to Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          author_name: "KOIN_CHAT Stage Deploy Result"
+          fields: repo,message,author,action,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
